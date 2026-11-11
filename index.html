@@ -1,0 +1,422 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Superfighters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <div class="orientation-lock" id="orientationLock">
+      <div class="orientation-card">
+        <div class="pixel">ROTATE YOUR DEVICE</div>
+        <p>Landscape mode is required to play.</p>
+      </div>
+    </div>
+    <canvas id="game"></canvas>
+
+    <!-- ============ HUD ============ -->
+    <div id="hud" class="hud">
+      <div class="hud-top">
+        <div class="hud-left">
+          <div class="card hp-wrap">
+            <div class="hp-bar"><div id="hpFill" class="hp-fill"></div></div>
+            <span id="hpText" class="pixel">100</span>
+          </div>
+          <div class="name-tag pixel" id="pName">PLAYER</div>
+        </div>
+        <div class="hud-mid card">
+          <div class="wave pixel">
+            <span id="waveLabel">WAVE</span> <span id="waveNum">1</span>
+          </div>
+          <div class="enemies pixel">
+            <span id="enemyLabel">ENEMIES</span> <span id="enemyNum">0</span>
+          </div>
+          <div class="duel-kills pixel" id="p2KillLine"></div>
+        </div>
+        <div class="hud-right">
+          <div class="p2-status card pixel" id="p2Hud">
+            <div class="p2-hp-bar"><div id="p2HpFill"></div></div>
+            <span id="p2HpText">180</span> HP
+            <div class="name-tag pixel" id="p2Name">PLAYER 2</div>
+            <div id="p2AmmoText">PISTOL 12/12 · FRAG 2</div>
+          </div>
+          <div class="card score pixel">
+            SCORE<br /><span id="scoreNum">0</span>
+          </div>
+          <button id="pauseBtn" class="icon-btn" title="Pause">II</button>
+        </div>
+      </div>
+      <div class="hud-bot">
+        <div class="card weap-block pixel">
+          <img
+            id="weaponImage"
+            class="weapon-image"
+            src="pistol.jpg"
+            alt="PISTOL"
+            title="Tap to switch weapons"
+            role="button"
+            tabindex="0"
+          />
+          <div id="weaponName">PISTOL</div>
+          <div
+            class="ammo"
+            id="ammoTap"
+            title="Tap to reload"
+            role="button"
+            tabindex="0"
+          >
+            <span id="ammoMag">12</span>/<span id="ammoMax">12</span>
+          </div>
+          <div style="color: #8b95b5">
+            <button
+              class="grenade-select"
+              id="grenadeSelect"
+              type="button"
+              title="Tap to change grenade"
+              aria-label="Selected grenade"
+            >
+              FRAG 2
+            </button>
+          </div>
+        </div>
+        <div
+          class="card pixel"
+          style="font-size: 8px; color: #8b95b5"
+          id="hintBar"
+        >
+          WASD MOVE + AIM &middot; SPACE SHOOT
+        </div>
+        <div class="card weap-block pixel p2-weap-block" id="p2WeapBlock">
+          <img
+            id="p2WeaponImage"
+            class="weapon-image"
+            src="pistol.jpg"
+            alt="PISTOL"
+            title="Tap to switch weapons"
+            role="button"
+            tabindex="0"
+          />
+          <div id="p2WeaponName">PISTOL</div>
+          <div
+            class="ammo"
+            id="p2AmmoTap"
+            title="Tap to reload"
+            role="button"
+            tabindex="0"
+          >
+            <span id="p2AmmoMag">12</span>/<span id="p2AmmoMax">12</span>
+          </div>
+          <div style="color: #8b95b5">
+            <button
+              class="grenade-select"
+              id="p2GrenadeSelect"
+              type="button"
+              title="Tap to change grenade"
+              aria-label="Player 2 selected grenade"
+            >
+              FRAG 2
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="prompt" class="prompt pixel">PRESS <b>E</b> TO PICK UP</div>
+    <div class="killfeed" id="killfeed"></div>
+    <div class="toast" id="toast"></div>
+
+    <!-- ============ TOUCH CONTROLS ============ -->
+    <div class="touch" id="touch">
+      <div class="zone left" id="zoneL"></div>
+      <div class="zone right" id="zoneR"></div>
+      <div class="stick" id="stickMove"><div class="knob"></div></div>
+      <div class="stick aim" id="stickAim"><div class="knob"></div></div>
+      <div class="tbtns">
+        <button
+          class="tbtn nade"
+          id="throwGrenadeBtn"
+          data-act="nade"
+          aria-label="Throw Frag Grenade"
+        >
+          G
+        </button>
+        <button class="tbtn melee" data-act="melee" aria-label="Melee attack">
+          ✊
+        </button>
+        <button class="tbtn" data-act="pick" aria-label="Pick up item">
+          PICK
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ MENU ============ -->
+    <div class="overlay on" id="menuOv">
+      <div class="modal menu-hero">
+        <div class="center">
+          <div class="title pixel">SUPER<span class="y">FIGHTERS</span></div>
+          <div class="tagline pixel">LABAN PILIPINAS</div>
+        </div>
+
+        <h3 class="pixel">PLAYER 1 — FIGHTER NAME</h3>
+        <input
+          type="text"
+          id="nameInput"
+          maxlength="14"
+          placeholder="ENTER NAME"
+          autocomplete="off"
+          spellcheck="false"
+        />
+
+        <h3 class="pixel">CHOOSE CHARACTER</h3>
+        <div
+          class="character-picker"
+          id="characterPicker"
+          role="group"
+          aria-label="Choose your character"
+        >
+          <button
+            class="character-arrow"
+            id="characterPrev"
+            type="button"
+            aria-label="Previous character"
+          >
+            &larr;
+          </button>
+          <div class="character-current" aria-live="polite">
+            <img id="characterPreview" src="constructionworker.png" alt="" />
+            <span class="pixel" id="characterName">CONSTRUCTION WORKER</span>
+          </div>
+          <button
+            class="character-arrow"
+            id="characterNext"
+            type="button"
+            aria-label="Next character"
+          >
+            &rarr;
+          </button>
+        </div>
+
+        <div class="row" style="margin-top: 14px">
+          <button class="btn primary" id="playBtn">▶ FIGHT</button>
+          <button class="btn" id="lbBtn">🏆 RANKING</button>
+        </div>
+
+        <div class="stats" id="controlHint">
+          <span
+            >WASD MOVE + AIM · E PICK UP · R RELOAD · G GRENADE · SPACE
+            FIRE</span
+          >
+        </div>
+        <div class="stats" id="menuStats"></div>
+      </div>
+    </div>
+
+    <div class="overlay hidden" id="modeOv">
+      <div class="modal">
+        <h2 class="pixel">CHOOSE GAME MODE</h2>
+        <p class="sub">
+          Choose a single-player survival run or a local 1v1 match.
+        </p>
+        <h3 class="pixel">CHOOSE MAP</h3>
+        <div
+          class="map-picker"
+          id="mapPicker"
+          role="group"
+          aria-label="Choose a map"
+        >
+          <button
+            class="map-choice"
+            type="button"
+            data-map="map3"
+            aria-pressed="true"
+          >
+            <img src="map 3.jpg" alt="" />
+            <span class="pixel">BAMBOO WAREHOUSE</span>
+          </button>
+          <button
+            class="map-choice"
+            type="button"
+            data-map="map1"
+            aria-pressed="false"
+          >
+            <img src="map 1.jpg" alt="" />
+            <span class="pixel">WAREHOUSE</span>
+          </button>
+          <button
+            class="map-choice"
+            type="button"
+            data-map="map2"
+            aria-pressed="false"
+          >
+            <img src="map 2.png" alt="" />
+            <span class="pixel">BORACAY</span>
+          </button>
+        </div>
+        <div class="row" style="margin-top: 14px">
+          <button class="btn primary" id="singleModeBtn" type="button">
+            SINGLE PLAYER
+          </button>
+          <button class="btn" id="duelModeBtn" type="button">PVP / 1V1</button>
+        </div>
+        <div id="p2CharacterSection" class="hidden">
+          <h3 class="pixel">PLAYER 2 — FIGHTER NAME</h3>
+          <input
+            type="text"
+            id="p2NameInput"
+            maxlength="14"
+            placeholder="PLAYER 2 NAME"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <h3 class="pixel">PLAYER 2 — CHOOSE CHARACTER</h3>
+          <div
+            class="character-picker"
+            role="group"
+            aria-label="Choose player 2 character"
+          >
+            <button
+              class="character-arrow"
+              id="p2CharacterPrev"
+              type="button"
+              aria-label="Previous player 2 character"
+            >
+              &larr;
+            </button>
+            <div class="character-current" aria-live="polite">
+              <img id="p2CharacterPreview" src="dancer.png" alt="" />
+              <span class="pixel" id="p2CharacterName">DANCER</span>
+            </div>
+            <button
+              class="character-arrow"
+              id="p2CharacterNext"
+              type="button"
+              aria-label="Next player 2 character"
+            >
+              &rarr;
+            </button>
+          </div>
+          <div class="stats">
+            <span
+              >ARROWS MOVE · NUMPAD 8/6/4/2 AIM · NUMPAD 5 FIRE · NUMPAD 0
+              GRENADE</span
+            >
+          </div>
+          <div class="row" style="margin-top: 12px">
+            <button class="btn primary" id="startDuelBtn" type="button">
+              ▶ START 1V1
+            </button>
+          </div>
+        </div>
+        <div class="row" style="margin-top: 12px">
+          <button class="btn ghost" id="modeBackBtn" type="button">BACK</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ GAME OVER ============ -->
+    <div class="overlay hidden" id="overOv">
+      <div class="modal center">
+        <h2 class="pixel" id="overTitle" style="color: #ff4d5a">
+          YOU WERE DOWNED
+        </h2>
+        <p class="sub" id="overSub">The barangay will remember your stand.</p>
+        <div class="big-score" id="overScore">0</div>
+        <div id="singlePlayerResults">
+          <div class="stats" style="justify-content: center">
+            <span>WAVE <b id="overWave">1</b></span>
+            <span>KILLS <b id="overKills">0</b></span>
+            <span>ACCURACY <b id="overAcc">0%</b></span>
+          </div>
+          <h3 class="pixel">SAVE YOUR SCORE</h3>
+          <input
+            type="text"
+            id="overName"
+            maxlength="14"
+            placeholder="ENTER NAME"
+          />
+          <div id="saveMsg" class="sub" style="margin-top: 10px"></div>
+        </div>
+        <div class="row" style="margin-top: 12px">
+          <button class="btn primary" id="saveBtn">💾 SUBMIT SCORE</button>
+          <button class="btn" id="againBtn">↻ RETRY</button>
+          <button class="btn ghost" id="overMenuBtn">☰ MENU</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ LEADERBOARD ============ -->
+    <div class="overlay hidden" id="lbOv">
+      <div class="modal">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h2 class="pixel">🏆 HALL OF FIGHTERS</h2>
+          <span class="badge pixel" id="lbBadge">LOCAL DB</span>
+        </div>
+        <p class="sub">Top scores stored in the <b>game.db</b> database.</p>
+        <div style="max-height: 44vh; overflow: auto; margin-top: 10px">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>FIGHTER</th>
+                <th>SCORE</th>
+                <th>WAVE</th>
+                <th>DATE</th>
+              </tr>
+            </thead>
+            <tbody id="lbBody">
+              <tr>
+                <td colspan="5" class="sub">Loading…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="stats" id="lbStats"></div>
+        <div class="row" style="margin-top: 14px">
+          <button class="btn primary" id="lbClose">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PAUSE ============ -->
+    <div class="overlay hidden" id="pauseOv">
+      <div class="modal center">
+        <h2 class="pixel">PAUSED</h2>
+        <p class="sub">Take a breather, fighter.</p>
+        <div class="row" style="margin-top: 14px">
+          <button class="btn primary" id="resumeBtn">▶ RESUME</button>
+          <button class="btn" id="touchToggle">📱 TOUCH: AUTO</button>
+          <button class="btn" id="soundToggle">🔊 SOUND: ON</button>
+          <button class="btn danger" id="quitBtn">✕ QUIT</button>
+        </div>
+        <div class="ctrl-grid" style="margin-top: 16px; text-align: left">
+          <div class="ctrl">
+            <span class="key">W</span><span class="key">A</span
+            ><span class="key">S</span><span class="key">D</span> MOVE / AIM /
+            JUMP
+          </div>
+          <div class="ctrl"><span class="key">SPACE</span> SHOOT</div>
+          <div class="ctrl"><span class="key">E</span> PICK UP</div>
+          <div class="ctrl"><span class="key">R</span> RELOAD</div>
+          <div class="ctrl"><span class="key">G</span> GRENADE</div>
+          <div class="ctrl"><span class="key">ESC</span> PAUSE</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
